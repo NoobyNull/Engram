@@ -9,9 +9,12 @@ import { handleStats } from '../mcp/tools/stats.js';
 import { deleteObservation } from '../db/observations.js';
 import { deleteKnowledge } from '../db/knowledge.js';
 import { getDb } from '../db/database.js';
-import { getConfig, saveConfig } from '../shared/config.js';
+import { getConfig, saveConfig, getDbPath } from '../shared/config.js';
+import { isVectorsAvailable } from '../db/database.js';
 import { createLogger } from '../shared/logger.js';
 import type { KnowledgeType, StagedObservation } from '../shared/types.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const log = createLogger('web:routes');
 
@@ -176,6 +179,75 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     const project = url.searchParams.get('project') || undefined;
     const stats = await handleStats({ project });
     sendJson(res, stats);
+    return;
+  }
+
+  // GET /api/status — full system status dashboard
+  if (method === 'GET' && pathname === '/api/status') {
+    const config = getConfig();
+    const stats = await handleStats({});
+    const dbPath = getDbPath();
+    const dataDir = config.dataDir;
+    const logPath = path.join(dataDir, 'claudex.log');
+
+    // Read version from install marker or package.json
+    let version = 'unknown';
+    const pluginRoot = process.env['CLAUDEX_PLUGIN_ROOT'] || '';
+    try {
+      const marker = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.install-marker'), 'utf-8'));
+      version = marker.version;
+    } catch {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'package.json'), 'utf-8'));
+        version = pkg.version;
+      } catch {}
+    }
+
+    const vectorsAvailable = isVectorsAvailable();
+    const embeddingsActive = stats.embeddings > 0 || stats.pendingEmbeddings > 0;
+
+    sendJson(res, {
+      system: {
+        version,
+        node: process.version,
+        platform: process.platform + '/' + process.arch,
+        dataDir,
+        dbPath,
+        dbSize: stats.storageBytes,
+        logPath,
+        schemaVersion: 4,
+      },
+      services: {
+        mcp: 'running',
+        webUI: { enabled: config.webUI.enabled, port: config.webUI.port },
+        hooks: ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'PreToolUse', 'PreCompact', 'SessionEnd'],
+      },
+      dependencies: {
+        'better-sqlite3': true,
+        'sqlite-vec': vectorsAvailable,
+        fastembed: embeddingsActive || config.embeddings.provider === 'fastembed',
+      },
+      memory: stats,
+      config: {
+        autoCapture: config.autoCapture,
+        embeddings: {
+          enabled: config.embeddings.enabled,
+          provider: config.embeddings.provider,
+          model: config.embeddings.model,
+        },
+        vectorSearch: vectorsAvailable,
+        conflictDetection: {
+          enabled: config.conflictDetection?.enabled ?? false,
+          threshold: config.conflictDetection?.similarityThreshold,
+        },
+        checkpoints: {
+          enabled: config.checkpoints?.enabled ?? false,
+          autoFork: config.checkpoints?.autoForkBeforeDestructive ?? false,
+        },
+        knowledgeGraph: config.knowledgeGraph?.enabled ?? false,
+        curation: config.curation?.enabled ?? false,
+      },
+    });
     return;
   }
 

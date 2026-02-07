@@ -7,124 +7,55 @@ arguments: []
 
 # /status
 
-Display a comprehensive status dashboard for the ClauDEX plugin.
+Display the ClauDEX status dashboard by fetching pre-built status data from the web API.
 
 ## Behavior
 
-1. Call the `memory_stats` MCP tool to get memory statistics
-2. Gather system information from the environment
-3. Present a formatted status report covering all sections below
+1. Fetch `http://127.0.0.1:37820/api/status` (use WebFetch or Bash `curl -s`)
+2. Format the JSON response as a clean status report (see format below)
+3. If the fetch fails, report that the ClauDEX web server is not running
 
 ## Output Format
 
-Present the status as a clean, structured report with these sections:
-
-### System
-
-| Field | How to get it |
-|-------|---------------|
-| ClauDEX version | From `memory_stats` response or read `~/.claudex/` install marker |
-| Node.js version | `process.version` (mention in output) |
-| Platform | `process.platform` / `process.arch` |
-| Data directory | `~/.claudex/` |
-| Database path | `~/.claudex/claudex.db` |
-| Database size | From `memory_stats` → `storageBytes` (format as KB/MB) |
-| Schema version | 4 (current) |
-| Log file | `~/.claudex/claudex.log` |
-
-### Services
-
-| Service | How to check |
-|---------|-------------|
-| MCP Server | If `memory_stats` call succeeds → running. If it fails → not running. |
-| Web UI | Try `curl -s http://127.0.0.1:37820/` or note from config `webUI.port`. Report as "enabled on port X" or "disabled". |
-| Hooks | List the 7 registered hooks: Setup, SessionStart, UserPromptSubmit, PostToolUse, PreToolUse, PreCompact, SessionEnd |
-
-### Dependencies
-
-| Package | Status |
-|---------|--------|
-| better-sqlite3 | Required. If MCP responds → installed. |
-| sqlite-vec | Optional. Check if `memory_stats` returns embeddings > 0 or note from stats. |
-| fastembed | Optional. Check if embeddings are being generated. |
-
-### Memory Stats
-
-From `memory_stats` response, display:
-
-- Observations count
-- Knowledge entries count
-- Sessions count
-- Conversations (total / stashed)
-- Projects count
-- Embeddings (stored / pending)
-- Top tags (if any)
-
-### Configuration Highlights
-
-Summarize key config states:
-- Auto-capture: enabled/disabled
-- Embeddings: provider + model + enabled/disabled
-- Vector search: available/unavailable
-- Conflict detection: enabled/disabled (threshold %)
-- Checkpoints: enabled/disabled, auto-fork on/off
-- Knowledge graph: enabled/disabled
-- Curation: enabled/disabled
-
-## Formatting
-
-- Use a monospace-friendly table layout
-- Use checkmarks/crosses for boolean states
-- Format byte sizes human-readably (e.g., "2.4 MB")
-- Keep the output concise — one screen if possible
-
-## Example Output
+Format the JSON response as a concise dashboard. Use checkmarks/crosses for booleans, format `dbSize` bytes as KB/MB.
 
 ```
 ClauDEX Status
 ==============
 
 System
-  Version:      1.0.0
-  Node.js:      v22.1.0
-  Platform:     linux/x64
-  Data dir:     ~/.claudex/
-  Database:     ~/.claudex/claudex.db (2.4 MB)
-  Log file:     ~/.claudex/claudex.log
+  Version:      {system.version}
+  Node.js:      {system.node}
+  Platform:     {system.platform}
+  Data dir:     {system.dataDir}
+  Database:     {system.dbPath} ({system.dbSize} formatted)
+  Log file:     {system.logPath}
 
 Services
-  MCP Server:   running
-  Web UI:       enabled on :37820
-  Hooks:        7 registered (Setup, SessionStart, UserPromptSubmit, PostToolUse, PreToolUse, PreCompact, SessionEnd)
+  MCP Server:   {services.mcp}
+  Web UI:       {services.webUI.enabled ? "enabled on :" + services.webUI.port : "disabled"}
+  Hooks:        {services.hooks.length} registered ({services.hooks joined})
 
 Dependencies
-  better-sqlite3:  installed
-  sqlite-vec:      installed (vector search enabled)
-  fastembed:       installed (local embeddings enabled)
+  better-sqlite3:  {dependencies.better-sqlite3 ? "installed" : "missing"}
+  sqlite-vec:      {dependencies.sqlite-vec ? "installed" : "not available"}
+  fastembed:       {dependencies.fastembed ? "installed" : "not available"}
 
 Memory
-  Observations:    142
-  Knowledge:       23
-  Sessions:        18
-  Conversations:   12 (3 stashed)
-  Projects:        2
-  Embeddings:      165 stored, 0 pending
-  Top tags:        typescript(45), auth(23), api(19), database(12), testing(8)
+  Observations:    {memory.observations}
+  Knowledge:       {memory.knowledge}
+  Sessions:        {memory.sessions}
+  Conversations:   {memory.conversations} ({memory.stashed} stashed)
+  Projects:        {memory.projects}
+  Embeddings:      {memory.embeddings} stored, {memory.pendingEmbeddings} pending
+  Top tags:        {memory.topTags formatted as tag(count), ...}
 
 Config
-  Auto-capture:       on
-  Embeddings:         fastembed / BGESmallENV15
-  Vector search:      available
-  Conflict detection: on (65% threshold)
-  Checkpoints:        on (auto-fork: on)
-  Knowledge graph:    on
-  Curation:           on
+  Auto-capture:       {config.autoCapture ? "on" : "off"}
+  Embeddings:         {config.embeddings.provider} / {config.embeddings.model}
+  Vector search:      {config.vectorSearch ? "available" : "unavailable"}
+  Conflict detection: {config.conflictDetection.enabled ? "on" : "off"} ({config.conflictDetection.threshold * 100}% threshold)
+  Checkpoints:        {config.checkpoints.enabled ? "on" : "off"} (auto-fork: {config.checkpoints.autoFork ? "on" : "off"})
+  Knowledge graph:    {config.knowledgeGraph ? "on" : "off"}
+  Curation:           {config.curation ? "on" : "off"}
 ```
-
-## Error Handling
-
-- If `memory_stats` fails (MCP not running), report what you can from the filesystem:
-  - Check if `~/.claudex/` exists
-  - Check if `claudex.db` exists and its size
-  - Check if settings.json exists
-  - Report MCP server as "not running" and suggest the user check plugin installation

@@ -3226,8 +3226,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path4) {
-      let input = path4;
+    function removeDotSegments(path5) {
+      let input = path5;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3426,8 +3426,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path4, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path4 && path4 !== "/" ? path4 : void 0;
+        const [path5, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path5 && path5 !== "/" ? path5 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -6780,12 +6780,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs5, exportName) {
+    function addFormats(ajv, list, fs6, exportName) {
       var _a;
       var _b;
       (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs5[f]);
+        ajv.addFormat(f, fs6[f]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -8903,6 +8903,70 @@ async function handleApiRequest(req, res) {
     sendJson(res, stats);
     return;
   }
+  if (method === "GET" && pathname === "/api/status") {
+    const config3 = getConfig();
+    const stats = await handleStats({});
+    const dbPath = getDbPath();
+    const dataDir = config3.dataDir;
+    const logPath = import_node_path3.default.join(dataDir, "claudex.log");
+    let version3 = "unknown";
+    const pluginRoot = process.env["CLAUDEX_PLUGIN_ROOT"] || "";
+    try {
+      const marker = JSON.parse(import_node_fs4.default.readFileSync(import_node_path3.default.join(pluginRoot, ".install-marker"), "utf-8"));
+      version3 = marker.version;
+    } catch {
+      try {
+        const pkg = JSON.parse(import_node_fs4.default.readFileSync(import_node_path3.default.join(pluginRoot, "package.json"), "utf-8"));
+        version3 = pkg.version;
+      } catch {
+      }
+    }
+    const vectorsAvailable2 = isVectorsAvailable();
+    const embeddingsActive = stats.embeddings > 0 || stats.pendingEmbeddings > 0;
+    sendJson(res, {
+      system: {
+        version: version3,
+        node: process.version,
+        platform: process.platform + "/" + process.arch,
+        dataDir,
+        dbPath,
+        dbSize: stats.storageBytes,
+        logPath,
+        schemaVersion: 4
+      },
+      services: {
+        mcp: "running",
+        webUI: { enabled: config3.webUI.enabled, port: config3.webUI.port },
+        hooks: ["SessionStart", "UserPromptSubmit", "PostToolUse", "PreToolUse", "PreCompact", "SessionEnd"]
+      },
+      dependencies: {
+        "better-sqlite3": true,
+        "sqlite-vec": vectorsAvailable2,
+        fastembed: embeddingsActive || config3.embeddings.provider === "fastembed"
+      },
+      memory: stats,
+      config: {
+        autoCapture: config3.autoCapture,
+        embeddings: {
+          enabled: config3.embeddings.enabled,
+          provider: config3.embeddings.provider,
+          model: config3.embeddings.model
+        },
+        vectorSearch: vectorsAvailable2,
+        conflictDetection: {
+          enabled: config3.conflictDetection?.enabled ?? false,
+          threshold: config3.conflictDetection?.similarityThreshold
+        },
+        checkpoints: {
+          enabled: config3.checkpoints?.enabled ?? false,
+          autoFork: config3.checkpoints?.autoForkBeforeDestructive ?? false
+        },
+        knowledgeGraph: config3.knowledgeGraph?.enabled ?? false,
+        curation: config3.curation?.enabled ?? false
+      }
+    });
+    return;
+  }
   const deleteMatch = pathname.match(/^\/api\/memories\/(.+)$/);
   if (method === "DELETE" && deleteMatch) {
     const id = deleteMatch[1];
@@ -9055,7 +9119,7 @@ function readBody(req) {
     req.on("error", reject);
   });
 }
-var log24, globalStagingBuffer;
+var import_node_fs4, import_node_path3, log24, globalStagingBuffer;
 var init_routes = __esm({
   "src/web/routes.ts"() {
     "use strict";
@@ -9070,7 +9134,10 @@ var init_routes = __esm({
     init_knowledge();
     init_database();
     init_config();
+    init_database();
     init_logger();
+    import_node_fs4 = __toESM(require("node:fs"), 1);
+    import_node_path3 = __toESM(require("node:path"), 1);
     log24 = createLogger("web:routes");
     globalStagingBuffer = null;
   }
@@ -9083,17 +9150,17 @@ __export(server_exports, {
 });
 function serveStatic(res, urlPath) {
   const pluginRoot = process.env["CLAUDEX_PLUGIN_ROOT"] || "";
-  const publicDir = import_node_path3.default.join(pluginRoot, "web", "public");
+  const publicDir = import_node_path4.default.join(pluginRoot, "web", "public");
   let filePath = urlPath === "/" ? "/index.html" : urlPath;
-  const resolved = import_node_path3.default.resolve(publicDir, "." + filePath);
+  const resolved = import_node_path4.default.resolve(publicDir, "." + filePath);
   if (!resolved.startsWith(publicDir)) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
   }
   try {
-    const content = import_node_fs4.default.readFileSync(resolved);
-    const ext = import_node_path3.default.extname(resolved);
+    const content = import_node_fs5.default.readFileSync(resolved);
+    const ext = import_node_path4.default.extname(resolved);
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
     res.writeHead(200, {
       "Content-Type": contentType,
@@ -9153,13 +9220,13 @@ function startRealServer(port) {
     }
   });
 }
-var import_node_http, import_node_fs4, import_node_path3, log25, MIME_TYPES;
+var import_node_http, import_node_fs5, import_node_path4, log25, MIME_TYPES;
 var init_server = __esm({
   "src/web/server.ts"() {
     "use strict";
     import_node_http = __toESM(require("node:http"), 1);
-    import_node_fs4 = __toESM(require("node:fs"), 1);
-    import_node_path3 = __toESM(require("node:path"), 1);
+    import_node_fs5 = __toESM(require("node:fs"), 1);
+    import_node_path4 = __toESM(require("node:path"), 1);
     init_routes();
     init_logger();
     log25 = createLogger("web:server");
@@ -9370,10 +9437,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path4) {
-  if (!path4)
+function getElementAtPath(obj, path5) {
+  if (!path5)
     return obj;
-  return path4.reduce((acc, key) => acc?.[key], obj);
+  return path5.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -9693,11 +9760,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path4, issues) {
+function prefixIssues(path5, issues) {
   return issues.map((iss) => {
     var _a;
     (_a = iss).path ?? (_a.path = []);
-    iss.path.unshift(path4);
+    iss.path.unshift(path5);
     return iss;
   });
 }
@@ -17160,7 +17227,7 @@ function runRecovery() {
 // src/mcp/stdio-server.ts
 init_config();
 init_logger();
-var version2 = "1.0.3";
+var version2 = "1.0.6";
 var log26 = createLogger("mcp:stdio");
 getDb();
 runRecovery();
