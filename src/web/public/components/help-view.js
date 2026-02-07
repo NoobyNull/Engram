@@ -495,14 +495,14 @@ function buildHelpSections() {
       html: `
         <p>Type these in the Claude Code prompt. They're the primary way to interact with ClauDEX.</p>
         <div class="help-cards">
-          ${skillCard('/claudex:remember <content>', 'Save something to memory. Auto-detects type (fact, decision, preference, pattern, issue, context) and suggests tags.')}
-          ${skillCard('/claudex:forget <what>', 'Delete memories. Searches first, shows matches, confirms before deleting.')}
-          ${skillCard('/claudex:recall <query>', 'Search all memory types. Shows results grouped by type with the option to fetch deeper detail.')}
-          ${skillCard('/claudex:stash [label]', 'Park the current conversation for later. Auto-labels from conversation topic if no label given.')}
-          ${skillCard('/claudex:resume', 'Resume a stashed conversation. Supports: bare (picker), list, search <query>, or <topic> for direct match.')}
-          ${skillCard('/claudex:checkpoint [label]', 'Create a session save point. Captures observation count, conversation IDs, and last observation reference.')}
-          ${skillCard('/claudex:resolve', 'Handle memory conflicts. Supports: bare/list (show pending), merge, keep_both, replace, skip.')}
-          ${skillCard('/claudex:status', 'Show system health dashboard — version, services, dependencies, memory stats, and config.')}
+          ${skillCard('/remember <content>', 'Save something to memory. Auto-detects type (fact, decision, preference, pattern, issue, context) and suggests tags.')}
+          ${skillCard('/forget <what>', 'Delete memories. Searches first, shows matches, confirms before deleting.')}
+          ${skillCard('/recall <query>', 'Search all memory types. Shows results grouped by type with the option to fetch deeper detail.')}
+          ${skillCard('/stash [label]', 'Park the current conversation for later. Auto-labels from conversation topic if no label given.')}
+          ${skillCard('/resume', 'Resume a stashed conversation. Supports: bare (picker), list, search <query>, or <topic> for direct match.')}
+          ${skillCard('/checkpoint [label]', 'Create a session save point. Captures observation count, conversation IDs, and last observation reference.')}
+          ${skillCard('/resolve', 'Handle memory conflicts. Supports: bare/list (show pending), merge, keep_both, replace, skip.')}
+          ${skillCard('/status', 'Show system health dashboard — version, services, dependencies, memory stats, and config.')}
         </div>
       `
     },
@@ -703,7 +703,7 @@ function buildHelpSections() {
       iconBg: 'rgba(99,179,237,0.12)',
       keywords: 'checkpoint fork save point destructive auto resume branch',
       html: `
-        <p>Session save points for recovery and branching. Use <code>/claudex:checkpoint</code> to create one manually, or enable <strong>auto-fork</strong> in Settings to automatically checkpoint before destructive Bash commands.</p>
+        <p>Session save points for recovery and branching. Use <code>/checkpoint</code> to create one manually, or enable <strong>auto-fork</strong> in Settings to automatically checkpoint before destructive Bash commands.</p>
         <div class="help-collapse-trigger"><span class="chevron">\u25B6</span> Destructive patterns detected</div>
         <div class="help-collapse-body">
           <div class="help-table-wrap"><table class="help-table">
@@ -716,7 +716,7 @@ function buildHelpSections() {
             <tr><td><code>truncate</code></td><td>Database</td></tr>
           </table></div>
         </div>
-        <p>Resume from checkpoint: pass a <code>fork_</code> prefixed ID to <code>/claudex:resume</code>.</p>
+        <p>Resume from checkpoint: pass a <code>fork_</code> prefixed ID to <code>/resume</code>.</p>
       `
     },
 
