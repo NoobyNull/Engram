@@ -228,12 +228,12 @@ info('Starting npm install...');
 try {
   info('Downloading packages...');
   info('Compiling native modules (better-sqlite3, sqlite-vec, fastembed)...');
-  info('This may take a minute - please wait...\\n');
+  info('This may take 2-3 minutes - please wait...\\n');
 
-  execSync('npm install --production --prefer-offline --no-audit --no-fund --loglevel=error', {
+  execSync('npm install --production --no-audit --no-fund --loglevel=warn', {
     cwd: PLUGIN_ROOT,
     stdio: ['pipe', 'pipe', 'inherit'],
-    timeout: 120000,
+    timeout: 300000, // 5 minutes for native compilation
     env: { ...process.env, MAKEFLAGS: '-j4' },
   });
 
@@ -241,7 +241,13 @@ try {
   ok('Dependencies installed successfully');
 } catch (err) {
   console.error('');
-  fail('npm install failed: ' + (err.message || 'unknown error'));
+  fail('npm install failed');
+  if (err.code) fail('Exit code: ' + err.code);
+  if (err.signal) fail('Signal: ' + err.signal);
+  fail('This usually means:');
+  fail('  - Native module compilation failed (check node-gyp/python)');
+  fail('  - Network timeout (try again)');
+  fail('  - Insufficient disk space or memory');
   process.exit(1);
 }
 
