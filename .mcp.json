@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "claudex": {
+      "command": "node",
+      "args": ["/data/Claude_Scholar/dist/src/mcp/stdio-server.js"],
+      "env": {}
+    }
+  }
+}

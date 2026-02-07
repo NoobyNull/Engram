@@ -1,0 +1,46 @@
+{
+  "name": "claudex",
+  "version": "2.0.0",
+  "description": "Persistent memory for Claude Code - automatic capture, smart search, knowledge management",
+  "type": "module",
+  "main": "dist/src/sdk/entry.js",
+  "exports": {
+    ".": "./dist/src/sdk/index.js",
+    "./sdk": "./dist/src/sdk/index.js",
+    "./mcp": "./dist/src/mcp/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "claude",
+    "memory",
+    "mcp",
+    "claude-code",
+    "plugin",
+    "claudex",
+    "sdk"
+  ],
+  "author": "ClauDEX",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "better-sqlite3": "^11.7.0",
+    "fastembed": "^2.1.0",
+    "sqlite-vec": "^0.1.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
