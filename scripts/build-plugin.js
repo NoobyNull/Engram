@@ -154,7 +154,6 @@ const pluginJson = {
   repository: 'https://github.com/NoobyNull/ClauDEX',
   license: 'MIT',
   skills: './.claude/skills/',
-  hooks: './hooks/hooks.json',
   mcpServers: './.mcp.json',
 };
 
