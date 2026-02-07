@@ -226,7 +226,7 @@ const pluginJson = {
   description: 'Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.',
   author: { name: 'ClauDEX' },
   license: 'MIT',
-  skills: '.claude/skills/',
+  skills: 'skills/',
   hooks: 'hooks/hooks.json',
   mcpServers: '.mcp.json',
 };
@@ -269,7 +269,7 @@ if (fs.existsSync(setupScript)) {
 // ─────────────────────────────────────────────────────────────────
 step('Checking skills...');
 
-const skillsDir = path.join(PLUGIN_DIR, '.claude', 'skills');
+const skillsDir = path.join(PLUGIN_DIR, 'skills');
 let skillCount = 0;
 if (fs.existsSync(skillsDir)) {
   const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
@@ -286,7 +286,7 @@ if (fs.existsSync(skillsDir)) {
 if (skillCount > 0) {
   ok(`${skillCount} skills found`);
 } else {
-  warn('No skills found in .claude/skills/');
+  warn('No skills found in skills/');
 }
 
 // ─────────────────────────────────────────────────────────────────

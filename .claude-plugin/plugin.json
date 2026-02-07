@@ -1,12 +1,12 @@
 {
   "name": "claudex",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.",
   "author": {
     "name": "ClauDEX"
   },
   "license": "MIT",
-  "skills": ".claude/skills/",
+  "skills": "skills/",
   "hooks": "hooks/hooks.json",
   "mcpServers": ".mcp.json"
 }

@@ -70,8 +70,8 @@ fs.cpSync(publicSrc, publicDst, { recursive: true });
 
 // ── Copy skills ──────────────────────────────────────────────────
 console.log('▸ Copying skills...');
-const skillsSrc = path.join(ROOT, '.claude/skills');
-const skillsDst = path.join(OUT, '.claude/skills');
+const skillsSrc = path.join(ROOT, 'skills');
+const skillsDst = path.join(OUT, 'skills');
 if (fs.existsSync(skillsSrc)) {
   fs.cpSync(skillsSrc, skillsDst, { recursive: true });
 }
@@ -152,7 +152,7 @@ const pluginJson = {
   author: { name: 'ClauDEX' },
   repository: 'https://github.com/NoobyNull/ClauDEX',
   license: 'MIT',
-  skills: './.claude/skills/',
+  skills: './skills/',
   mcpServers: './.mcp.json',
 };
 
@@ -271,5 +271,5 @@ console.log('\n✓ Plugin built → plugin/');
 console.log(`  scripts/hook-runner.cjs  ${fmtSize(hookSize)}`);
 console.log(`  scripts/mcp-server.cjs   ${fmtSize(mcpSize)}`);
 console.log(`  web/public/              ${fs.readdirSync(publicDst).length} files`);
-console.log(`  .claude/skills/          ${fs.readdirSync(skillsDst).length} skills`);
+console.log(`  skills/                  ${fs.readdirSync(skillsDst).length} skills`);
 console.log('');
