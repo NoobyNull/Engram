@@ -4,3 +4,4 @@ plugin/node_modules/
 plugin/.install-marker
 *.local.md
 .env
+.claude/skills/
