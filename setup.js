@@ -126,13 +126,21 @@ try {
 // ─────────────────────────────────────────────────────────────────
 // PHASE 3: Build
 // ─────────────────────────────────────────────────────────────────
-step('Compiling TypeScript...');
+step('Building plugin...');
 
 try {
   run('npx tsc', { stdio: 'inherit' });
-  ok('Build complete → dist/');
+  ok('TypeScript compiled → dist/');
 } catch {
   fail('TypeScript compilation failed');
+  process.exit(1);
+}
+
+try {
+  run('node scripts/build-plugin.js', { stdio: 'inherit' });
+  ok('Plugin bundled → plugin/');
+} catch {
+  fail('Plugin build failed');
   process.exit(1);
 }
 
@@ -145,11 +153,19 @@ const hooksDir = path.join(PLUGIN_DIR, 'hooks');
 fs.mkdirSync(hooksDir, { recursive: true });
 
 function hookCommand(event) {
-  return `node "\${CLAUDE_PLUGIN_ROOT}/dist/src/hooks/adapters/hook-runner.js" ${event}`;
+  return `node "\${CLAUDE_PLUGIN_ROOT}/plugin/scripts/hook-runner.cjs" ${event}`;
 }
 
 const hooksJson = {
   hooks: {
+    Setup: [{
+      matcher: '*',
+      hooks: [{
+        type: 'command',
+        command: `node "\${CLAUDE_PLUGIN_ROOT}/plugin/scripts/setup.js"`,
+        timeout: 120,
+      }],
+    }],
     SessionStart: [{
       matcher: 'startup|resume',
       hooks: [{ type: 'command', command: hookCommand('SessionStart') }],
@@ -186,8 +202,10 @@ const mcpJson = {
   mcpServers: {
     claudex: {
       command: 'node',
-      args: ['${CLAUDE_PLUGIN_ROOT}/dist/src/mcp/stdio-server.js'],
-      env: {},
+      args: ['${CLAUDE_PLUGIN_ROOT}/plugin/scripts/mcp-server.cjs'],
+      env: {
+        CLAUDEX_PLUGIN_ROOT: '${CLAUDE_PLUGIN_ROOT}',
+      },
     },
   },
 };
@@ -219,50 +237,35 @@ fs.writeFileSync(path.join(pluginDir, 'plugin.json'), JSON.stringify(pluginJson,
 ok(`plugin.json updated (v${pkg.version})`);
 
 // ─────────────────────────────────────────────────────────────────
-// PHASE 7: Verify database
+// PHASE 7: Verify plugin bundles
 // ─────────────────────────────────────────────────────────────────
-step('Testing database initialization...');
+step('Verifying plugin bundles...');
 
-try {
-  const dbTestScript = `
-    const { getDb, closeDb } = await import('${pathToFileURL(path.join(PLUGIN_DIR, 'dist', 'src', 'db', 'database.js'))}');
-    const db = getDb();
-    const row = db.prepare("SELECT COUNT(*) as c FROM sqlite_master WHERE type='table'").get();
-    console.log('OK:' + row.c);
-    closeDb();
-  `;
-  const result = run(`node --input-type=module -e "${dbTestScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, { stdio: 'pipe' });
-  if (result.startsWith('OK:')) {
-    ok(`Database OK (${result.slice(3)} tables)`);
-  } else {
-    warn(`Database test: ${result}`);
-  }
-} catch (err) {
-  warn('Database test failed (may work at runtime)');
+const pluginScripts = path.join(PLUGIN_DIR, 'plugin', 'scripts');
+const hookRunner = path.join(pluginScripts, 'hook-runner.cjs');
+const mcpServer = path.join(pluginScripts, 'mcp-server.cjs');
+const setupScript = path.join(pluginScripts, 'setup.js');
+
+if (fs.existsSync(hookRunner)) {
+  ok(`hook-runner.cjs (${(fs.statSync(hookRunner).size / 1024).toFixed(0)} KB)`);
+} else {
+  fail('hook-runner.cjs missing');
+}
+
+if (fs.existsSync(mcpServer)) {
+  ok(`mcp-server.cjs (${(fs.statSync(mcpServer).size / 1024).toFixed(0)} KB)`);
+} else {
+  fail('mcp-server.cjs missing');
+}
+
+if (fs.existsSync(setupScript)) {
+  ok('setup.js');
+} else {
+  fail('setup.js missing');
 }
 
 // ─────────────────────────────────────────────────────────────────
-// PHASE 8: Verify MCP server
-// ─────────────────────────────────────────────────────────────────
-step('Verifying MCP server module...');
-
-try {
-  const mcpTestScript = `
-    const { toolDefinitions } = await import('${pathToFileURL(path.join(PLUGIN_DIR, 'dist', 'src', 'mcp', 'index.js'))}');
-    console.log('OK:' + toolDefinitions.length);
-  `;
-  const result = run(`node --input-type=module -e "${mcpTestScript.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`, { stdio: 'pipe' });
-  if (result.startsWith('OK:')) {
-    ok(`MCP server OK (${result.slice(3)} tools registered)`);
-  } else {
-    warn('MCP module test returned unexpected output');
-  }
-} catch {
-  warn('MCP module failed to load');
-}
-
-// ─────────────────────────────────────────────────────────────────
-// PHASE 9: Verify skills
+// PHASE 8: Verify skills
 // ─────────────────────────────────────────────────────────────────
 step('Checking skills...');
 
@@ -287,7 +290,7 @@ if (skillCount > 0) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// PHASE 10: Register with Claude Code
+// PHASE 9: Register with Claude Code
 // ─────────────────────────────────────────────────────────────────
 if (!buildOnly) {
   step('Registering plugin...');
@@ -371,9 +374,3 @@ console.log();
 
 console.log(`${c.dim('Re-run setup after moving the directory to update paths.')}`);
 console.log();
-
-// ── Helpers ─────────────────────────────────────────────────────
-function pathToFileURL(p) {
-  // Convert a path to a file:// URL string for dynamic import
-  return 'file:///' + p.replace(/\\/g, '/').replace(/^\//, '');
-}

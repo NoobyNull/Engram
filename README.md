@@ -86,18 +86,17 @@ Claude: [ClauDEX Memory] Preference: Always use pnpm in this project, not npm
 
 ```bash
 git clone https://github.com/NoobyNull/ClauDEX.git
-cd ClauDEX
-npm install
-npm run build
 ```
 
-Then run the setup script to wire it into Claude Code:
+Then start Claude Code inside the cloned directory. ClauDEX ships pre-built — the Setup hook will automatically install native dependencies on first launch.
+
+For development (modifying ClauDEX source):
 
 ```bash
-./setup.sh
+cd ClauDEX
+npm install
+node setup.js
 ```
-
-Or manually: point your Claude Code plugin directory at the repo and ensure `.claude-plugin/plugin.json` is picked up.
 
 The database lives at `~/.claudex/claudex.db`. Override with `CLAUDEX_DATA_DIR` env var.
 
