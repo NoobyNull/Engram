@@ -6795,11 +6795,11 @@ var require_dist = __commonJS({
 
 // src/shared/config.ts
 function resolveDataDir() {
-  const envDir = process.env["CLAUDEX_DATA_DIR"];
+  const envDir = process.env["ENGRAM_DATA_DIR"];
   if (envDir) {
     return envDir.startsWith("~") ? envDir.replace("~", import_node_os.default.homedir()) : envDir;
   }
-  return import_node_path.default.join(import_node_os.default.homedir(), ".claudex");
+  return import_node_path.default.join(import_node_os.default.homedir(), ".engram");
 }
 function getConfig() {
   if (cachedConfig) return cachedConfig;
@@ -6836,7 +6836,7 @@ function ensureDataDir() {
   return config3.dataDir;
 }
 function getDbPath() {
-  return import_node_path.default.join(ensureDataDir(), "claudex.db");
+  return import_node_path.default.join(ensureDataDir(), "engram.db");
 }
 function saveConfig(updates) {
   const dataDir = resolveDataDir();
@@ -6876,7 +6876,7 @@ var init_config = __esm({
     import_node_path = __toESM(require("node:path"), 1);
     import_node_os = __toESM(require("node:os"), 1);
     DEFAULT_CONFIG = {
-      dataDir: import_node_path.default.join(import_node_os.default.homedir(), ".claudex"),
+      dataDir: import_node_path.default.join(import_node_os.default.homedir(), ".engram"),
       maxContextTokens: 2e3,
       sessionHistoryDepth: 10,
       autoCapture: true,
@@ -6928,7 +6928,7 @@ function getLogFile() {
     if (!import_node_fs2.default.existsSync(dataDir)) {
       import_node_fs2.default.mkdirSync(dataDir, { recursive: true });
     }
-    logFile = import_node_path2.default.join(dataDir, "claudex.log");
+    logFile = import_node_path2.default.join(dataDir, "engram.log");
   }
   return logFile;
 }
@@ -6982,7 +6982,7 @@ var init_logger = __esm({
     import_node_path2 = __toESM(require("node:path"), 1);
     init_config();
     LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
-    logLevel = process.env["CLAUDEX_LOG_LEVEL"] || "info";
+    logLevel = process.env["ENGRAM_LOG_LEVEL"] || "info";
     logFile = null;
   }
 });
@@ -8908,9 +8908,9 @@ async function handleApiRequest(req, res) {
     const stats = await handleStats({});
     const dbPath = getDbPath();
     const dataDir = config3.dataDir;
-    const logPath = import_node_path3.default.join(dataDir, "claudex.log");
+    const logPath = import_node_path3.default.join(dataDir, "engram.log");
     let version3 = "unknown";
-    const pluginRoot = process.env["CLAUDEX_PLUGIN_ROOT"] || "";
+    const pluginRoot = process.env["ENGRAM_PLUGIN_ROOT"] || "";
     try {
       const marker = JSON.parse(import_node_fs4.default.readFileSync(import_node_path3.default.join(pluginRoot, ".install-marker"), "utf-8"));
       version3 = marker.version;
@@ -9149,7 +9149,7 @@ __export(server_exports, {
   startWebServer: () => startWebServer
 });
 function serveStatic(res, urlPath) {
-  const pluginRoot = process.env["CLAUDEX_PLUGIN_ROOT"] || "";
+  const pluginRoot = process.env["ENGRAM_PLUGIN_ROOT"] || "";
   const publicDir = import_node_path4.default.join(pluginRoot, "web", "public");
   let filePath = urlPath === "/" ? "/index.html" : urlPath;
   const resolved = import_node_path4.default.resolve(publicDir, "." + filePath);
@@ -16825,7 +16825,7 @@ async function handleResume(args) {
     context,
     observation_summary: observationSummary,
     observation_count: observations.length,
-    hint: isResumable ? `For full context, run: ${nativeResume}` : "Native resume not available \u2014 context has been injected from ClauDEX memory."
+    hint: isResumable ? `For full context, run: ${nativeResume}` : "Native resume not available \u2014 context has been injected from Engram memory."
   };
 }
 
@@ -17236,7 +17236,7 @@ if (config2.webUI.enabled) {
   Promise.resolve().then(() => (init_server(), server_exports)).then(({ startWebServer: startWebServer2 }) => startWebServer2(config2.webUI.port)).catch((err) => log26.warn("Failed to start web UI", err));
 }
 var server = new Server(
-  { name: "claudex", version: version2 },
+  { name: "engram", version: version2 },
   { capabilities: { tools: {} } }
 );
 server.setRequestHandler(ListToolsRequestSchema, async () => ({

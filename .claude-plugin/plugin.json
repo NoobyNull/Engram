@@ -1,9 +1,9 @@
 {
-  "name": "claudex",
+  "name": "engram",
   "version": "1.0.6",
   "description": "Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.",
   "author": {
-    "name": "ClauDEX"
+    "name": "Engram"
   },
   "license": "MIT",
   "skills": "skills/",

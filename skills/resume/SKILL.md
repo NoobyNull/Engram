@@ -1,5 +1,5 @@
 ---
-name: claudex:resume
+name: engram:resume
 description: Resume a stashed conversation or list stashes
 user_invocable: true
 arguments:
