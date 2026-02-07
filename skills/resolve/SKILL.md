@@ -1,5 +1,5 @@
 ---
-name: resolve
+name: claudex:resolve
 description: Resolve a memory conflict or review pending conflicts
 user_invocable: true
 arguments:

@@ -1,5 +1,5 @@
 ---
-name: checkpoint
+name: claudex:checkpoint
 description: Create a session save point
 user_invocable: true
 arguments:

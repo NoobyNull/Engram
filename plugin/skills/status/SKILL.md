@@ -1,5 +1,5 @@
 ---
-name: status
+name: claudex:status
 description: Show ClauDEX system health, build info, and service status
 user_invocable: true
 arguments: []

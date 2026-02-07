@@ -1,5 +1,5 @@
 ---
-name: forget
+name: claudex:forget
 description: Delete something from persistent memory
 user_invocable: true
 arguments:

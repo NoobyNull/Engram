@@ -1,5 +1,5 @@
 ---
-name: remember
+name: claudex:remember
 description: Save something to persistent memory
 user_invocable: true
 arguments:

@@ -1,5 +1,5 @@
 ---
-name: recall
+name: claudex:recall
 description: Search persistent memory conversationally
 user_invocable: true
 arguments:

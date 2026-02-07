@@ -1,5 +1,5 @@
 ---
-name: stash
+name: claudex:stash
 description: Park current conversation thread for later
 user_invocable: true
 arguments:
