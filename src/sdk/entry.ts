@@ -7,6 +7,7 @@ import { ObservationBuffer } from './observation-buffer.js';
 import { buildSystemPromptContext } from './system-prompt.js';
 import { detectAndRegisterProject } from '../projects/detector.js';
 import { runRecovery } from '../recovery/restore.js';
+import { startProcessWatcher, stopProcessWatcher } from '../utils/process-watcher.js';
 import type { EngramSdkOptions } from '../shared/types.js';
 
 const log = createLogger('sdk:entry');
@@ -56,8 +57,16 @@ export async function initEngram(cwd: string): Promise<EngramSdkOptions> {
     }
   }
 
+  // Start process watcher to monitor Claude Code
+  startProcessWatcher(() => {
+    log.info('Process watcher triggered shutdown');
+    buffer.flush();
+    closeDb();
+  });
+
   // Cleanup handler
   const cleanup = () => {
+    stopProcessWatcher();
     buffer.flush();
     closeDb();
   };
