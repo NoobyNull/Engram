@@ -36,7 +36,7 @@ if (config.webUI.enabled) {
 }
 
 const server = new Server(
-  { name: 'claudex', version: '2.0.0' },
+  { name: 'claudex', version: '1.0.0' },
   { capabilities: { tools: {} } },
 );
 
