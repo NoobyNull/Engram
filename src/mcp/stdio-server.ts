@@ -15,11 +15,15 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import { createRequire } from 'node:module';
 import { toolDefinitions, handleToolCall } from './index.js';
 import { getDb } from '../db/database.js';
 import { runRecovery } from '../recovery/restore.js';
 import { getConfig } from '../shared/config.js';
 import { createLogger } from '../shared/logger.js';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../../../package.json');
 
 const log = createLogger('mcp:stdio');
 
@@ -36,7 +40,7 @@ if (config.webUI.enabled) {
 }
 
 const server = new Server(
-  { name: 'claudex', version: '1.0.0' },
+  { name: 'claudex', version },
   { capabilities: { tools: {} } },
 );
 

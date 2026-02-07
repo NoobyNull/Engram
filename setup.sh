@@ -19,6 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_DIR="$SCRIPT_DIR"
 BUILD_ONLY=false
 CLAUDE_SETTINGS_DIR="${CLAUDE_SETTINGS_DIR:-$HOME/.claude}"
+VERSION=$(node -p "require('${SCRIPT_DIR}/package.json').version" 2>/dev/null || echo "0.0.0")
 
 # ── Colors ───────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -220,10 +221,10 @@ ok ".mcp.json generated"
 # ─────────────────────────────────────────────────────────────────
 step "Updating plugin manifest..."
 
-cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" << 'PLUGINEOF'
+cat > "$PLUGIN_DIR/.claude-plugin/plugin.json" << PLUGINEOF
 {
   "name": "claudex",
-  "version": "2.0.0",
+  "version": "${VERSION}",
   "description": "Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.",
   "author": { "name": "ClauDEX" },
   "license": "MIT",
