@@ -14,8 +14,7 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "version:sync": "node scripts/sync-version.js",
-    "postversion": "node scripts/sync-version.js",
-    "prepare": "npm run build"
+    "postversion": "node scripts/sync-version.js"
   },
   "keywords": [
     "claude",

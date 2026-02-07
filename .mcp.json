@@ -3,7 +3,7 @@
     "claudex": {
       "command": "node",
       "args": [
-        "/data/ClauDEX/dist/src/mcp/stdio-server.js"
+        "${CLAUDE_PLUGIN_ROOT}/dist/src/mcp/stdio-server.js"
       ],
       "env": {}
     }

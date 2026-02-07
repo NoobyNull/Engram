@@ -144,10 +144,8 @@ step('Generating hook configuration...');
 const hooksDir = path.join(PLUGIN_DIR, 'hooks');
 fs.mkdirSync(hooksDir, { recursive: true });
 
-const hookRunnerPath = path.join(PLUGIN_DIR, 'dist', 'src', 'hooks', 'adapters', 'hook-runner.js');
-
 function hookCommand(event) {
-  return `node "${hookRunnerPath}" ${event}`;
+  return `node "\${CLAUDE_PLUGIN_ROOT}/dist/src/hooks/adapters/hook-runner.js" ${event}`;
 }
 
 const hooksJson = {
@@ -184,13 +182,11 @@ ok('hooks/hooks.json generated');
 // ─────────────────────────────────────────────────────────────────
 step('Generating MCP server configuration...');
 
-const mcpServerPath = path.join(PLUGIN_DIR, 'dist', 'src', 'mcp', 'stdio-server.js');
-
 const mcpJson = {
   mcpServers: {
     claudex: {
       command: 'node',
-      args: [mcpServerPath],
+      args: ['${CLAUDE_PLUGIN_ROOT}/dist/src/mcp/stdio-server.js'],
       env: {},
     },
   },
