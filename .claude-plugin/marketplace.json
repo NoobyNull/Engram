@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "noobynull-claudex",
+  "description": "Persistent memory for Claude Code",
+  "owner": {
+    "name": "NoobyNull"
+  },
+  "plugins": [
+    {
+      "name": "claudex",
+      "source": ".",
+      "description": "Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.",
+      "version": "1.0.0",
+      "author": {
+        "name": "NoobyNull"
+      },
+      "homepage": "https://github.com/NoobyNull/ClauDEX",
+      "repository": "https://github.com/NoobyNull/ClauDEX",
+      "license": "MIT",
+      "keywords": ["memory", "persistent", "knowledge", "mcp", "hooks", "sessions"],
+      "category": "development"
+    }
+  ]
+}
