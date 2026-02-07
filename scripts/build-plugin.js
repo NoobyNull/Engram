@@ -153,9 +153,9 @@ const pluginJson = {
   author: { name: 'ClauDEX' },
   repository: 'https://github.com/NoobyNull/ClauDEX',
   license: 'MIT',
-  skills: '.claude/skills/',
-  hooks: 'hooks/hooks.json',
-  mcpServers: '.mcp.json',
+  skills: './.claude/skills/',
+  hooks: './hooks/hooks.json',
+  mcpServers: './.mcp.json',
 };
 
 fs.writeFileSync(
