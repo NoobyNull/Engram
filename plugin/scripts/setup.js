@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * ClauDEX Plugin Setup
- * Installs native dependencies. Run automatically by the Setup hook.
+ * Installs native dependencies. Chained into the SessionStart hook.
+ * Skips instantly after first successful install (version-gated marker file).
  */
 const { execSync } = require('node:child_process');
 const path = require('node:path');

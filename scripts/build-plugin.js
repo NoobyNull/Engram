@@ -4,7 +4,7 @@
  *
  * Bundles the plugin into a self-contained directory using esbuild.
  * Native dependencies (better-sqlite3, sqlite-vec, fastembed) stay external
- * and are installed at runtime via the Setup hook.
+ * and are installed at runtime via the SessionStart hook.
  *
  * Usage: node scripts/build-plugin.js
  * Output: plugin/
@@ -84,19 +84,18 @@ function hookCmd(event) {
   return `node "\${CLAUDE_PLUGIN_ROOT}/scripts/hook-runner.cjs" ${event}`;
 }
 
+function setupCmd() {
+  return `node "\${CLAUDE_PLUGIN_ROOT}/scripts/setup.js"`;
+}
+
 const hooksJson = {
   hooks: {
-    Setup: [{
-      matcher: '*',
-      hooks: [{
-        type: 'command',
-        command: `node "\${CLAUDE_PLUGIN_ROOT}/scripts/setup.js"`,
-        timeout: 120,
-      }],
-    }],
     SessionStart: [{
       matcher: 'startup|resume',
-      hooks: [{ type: 'command', command: hookCmd('SessionStart') }],
+      hooks: [
+        { type: 'command', command: setupCmd(), timeout: 120 },
+        { type: 'command', command: hookCmd('SessionStart') },
+      ],
     }],
     UserPromptSubmit: [{
       hooks: [{ type: 'command', command: hookCmd('UserPromptSubmit') }],
@@ -190,7 +189,8 @@ console.log('▸ Generating setup.js...');
 const setupScript = `#!/usr/bin/env node
 /**
  * ClauDEX Plugin Setup
- * Installs native dependencies. Run automatically by the Setup hook.
+ * Installs native dependencies. Chained into the SessionStart hook.
+ * Skips instantly after first successful install (version-gated marker file).
  */
 const { execSync } = require('node:child_process');
 const path = require('node:path');
