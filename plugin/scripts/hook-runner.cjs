@@ -161,10 +161,16 @@ function formatMessage(level, component, message, data) {
   }
   return base;
 }
-function writeLog(formatted) {
+function writeLog(formatted, toStderr = false) {
   try {
     import_node_fs2.default.appendFileSync(getLogFile(), formatted + "\n");
   } catch {
+  }
+  if (toStderr) {
+    try {
+      process.stderr.write(formatted + "\n");
+    } catch {
+    }
   }
 }
 function createLogger(component) {
@@ -181,12 +187,12 @@ function createLogger(component) {
     },
     warn(message, data) {
       if (LEVELS[logLevel] <= LEVELS.warn) {
-        writeLog(formatMessage("warn", component, message, data));
+        writeLog(formatMessage("warn", component, message, data), true);
       }
     },
     error(message, data) {
       if (LEVELS[logLevel] <= LEVELS.error) {
-        writeLog(formatMessage("error", component, message, data));
+        writeLog(formatMessage("error", component, message, data), true);
       }
     }
   };
@@ -621,17 +627,20 @@ function generateId(prefix = "sch") {
   const rand = Math.random().toString(36).substring(2, 8);
   return `${prefix}_${ts}_${rand}`;
 }
-var import_better_sqlite3, import_node_module, log2, _require, dbInstance, vectorsAvailable;
+var import_better_sqlite3, import_node_module, import_node_url, import_meta, log2, _filename, _require, dbInstance, vectorsAvailable;
 var init_database = __esm({
   "src/db/database.ts"() {
     "use strict";
     import_better_sqlite3 = __toESM(require("better-sqlite3"), 1);
     import_node_module = require("node:module");
+    import_node_url = require("node:url");
     init_config();
     init_logger();
     init_schema();
+    import_meta = {};
     log2 = createLogger("database");
-    _require = (0, import_node_module.createRequire)(`file://${__filename}`);
+    _filename = typeof __filename !== "undefined" ? __filename : (0, import_node_url.fileURLToPath)(import_meta.url);
+    _require = (0, import_node_module.createRequire)(`file://${_filename}`);
     dbInstance = null;
     vectorsAvailable = false;
   }

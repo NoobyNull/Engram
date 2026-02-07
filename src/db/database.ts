@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { getDbPath } from '../shared/config.js';
 import { createLogger } from '../shared/logger.js';
 import { initializeSchema, initializeVectorTable } from './schema.js';
@@ -7,8 +8,9 @@ import { initializeSchema, initializeVectorTable } from './schema.js';
 const log = createLogger('database');
 
 // In esbuild CJS output, __filename is available natively.
-declare const __filename: string;
-const _require = createRequire(`file://${__filename}`);
+// In ESM (tsc output), derive it from import.meta.url.
+const _filename = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url);
+const _require = createRequire(`file://${_filename}`);
 
 let dbInstance: Database.Database | null = null;
 let vectorsAvailable = false;

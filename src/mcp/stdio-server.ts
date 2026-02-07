@@ -9,6 +9,9 @@
  * Also starts the web UI on the configured port.
  */
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -21,17 +24,45 @@ import { runRecovery } from '../recovery/restore.js';
 import { getConfig } from '../shared/config.js';
 import { createLogger } from '../shared/logger.js';
 
-declare const __CLAUDEX_VERSION__: string;
-const version = __CLAUDEX_VERSION__;
+declare const __CLAUDEX_VERSION__: string | undefined;
 
+function resolveVersion(): string {
+  // esbuild injects __CLAUDEX_VERSION__ at compile time
+  if (typeof __CLAUDEX_VERSION__ !== 'undefined') return __CLAUDEX_VERSION__;
+  // Fallback for tsc / development builds — read from package.json
+  try {
+    const pkgPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../package.json');
+    return JSON.parse(readFileSync(pkgPath, 'utf-8')).version;
+  } catch {
+    return '0.0.0-dev';
+  }
+}
+
+const version = resolveVersion();
 const log = createLogger('mcp:stdio');
 
 // Initialize database on startup
-getDb();
-runRecovery();
+try {
+  getDb();
+} catch (err) {
+  log.error('Database initialization failed', err);
+  process.exit(1);
+}
+
+try {
+  runRecovery();
+} catch (err) {
+  log.error('Recovery failed', err);
+}
 
 // Start web UI if enabled
-const config = getConfig();
+let config;
+try {
+  config = getConfig();
+} catch (err) {
+  log.error('Config load failed', err);
+  process.exit(1);
+}
 if (config.webUI.enabled) {
   import('../web/server.js')
     .then(({ startWebServer }) => startWebServer(config.webUI.port))

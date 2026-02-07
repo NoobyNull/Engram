@@ -33,11 +33,14 @@ function formatMessage(level: LogLevel, component: string, message: string, data
   return base;
 }
 
-function writeLog(formatted: string): void {
+function writeLog(formatted: string, toStderr = false): void {
   try {
     fs.appendFileSync(getLogFile(), formatted + '\n');
   } catch {
     // Silently fail — logging should never break the app
+  }
+  if (toStderr) {
+    try { process.stderr.write(formatted + '\n'); } catch {}
   }
 }
 
@@ -55,12 +58,12 @@ export function createLogger(component: string) {
     },
     warn(message: string, data?: unknown): void {
       if (LEVELS[logLevel] <= LEVELS.warn) {
-        writeLog(formatMessage('warn', component, message, data));
+        writeLog(formatMessage('warn', component, message, data), true);
       }
     },
     error(message: string, data?: unknown): void {
       if (LEVELS[logLevel] <= LEVELS.error) {
-        writeLog(formatMessage('error', component, message, data));
+        writeLog(formatMessage('error', component, message, data), true);
       }
     },
   };

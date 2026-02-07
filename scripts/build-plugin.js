@@ -41,6 +41,9 @@ const shared = {
   define: {
     '__CLAUDEX_VERSION__': JSON.stringify(pkg.version),
   },
+  logOverride: {
+    'empty-import-meta': 'silent', // import.meta.url is ESM-only fallback, dead code in CJS
+  },
   sourcemap: true,
   minify: false,
   logLevel: 'info',
