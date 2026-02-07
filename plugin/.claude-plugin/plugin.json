@@ -1,6 +1,6 @@
 {
   "name": "claudex",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Persistent memory for Claude Code — captures observations, saves knowledge, enables search across sessions.",
   "author": {
     "name": "ClauDEX"

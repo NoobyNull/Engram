@@ -1138,6 +1138,12 @@ var init_anthropic = __esm({
 });
 
 // src/embeddings/queue.ts
+function cancelDebouncedProcessing() {
+  if (debounceTimer !== null) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+}
 function enqueueEmbedding(sourceType, sourceId, textContent) {
   const db = getDb();
   const now = Date.now();
@@ -1147,6 +1153,14 @@ function enqueueEmbedding(sourceType, sourceId, textContent) {
       VALUES (?, ?, ?, 'pending', ?)
     `).run(sourceType, sourceId, textContent, now);
     log21.debug("Enqueued embedding", { sourceType, sourceId });
+    cancelDebouncedProcessing();
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      processQueue().catch((err) => {
+        log21.error("Debounced queue processing failed", { error: err });
+      });
+    }, 3e4);
+    debounceTimer.unref();
   } catch (err) {
     log21.error("Failed to enqueue embedding", { error: err, sourceType, sourceId });
   }
@@ -1224,7 +1238,7 @@ async function processQueue(batchSize) {
   log21.info("Queue processing complete", { processed, total: pendingItems.length });
   return processed;
 }
-var log21;
+var log21, debounceTimer;
 var init_queue = __esm({
   "src/embeddings/queue.ts"() {
     "use strict";
@@ -1234,6 +1248,7 @@ var init_queue = __esm({
     init_config();
     init_anthropic();
     log21 = createLogger("embeddings:queue");
+    debounceTimer = null;
   }
 });
 
@@ -13476,6 +13491,7 @@ async function handleSessionEnd(input, buffer) {
     keyActions.slice(0, 20),
     [...filesModified]
   );
+  cancelDebouncedProcessing();
   try {
     const processed = await processQueue();
     if (processed > 0) {

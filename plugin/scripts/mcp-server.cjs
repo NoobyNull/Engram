@@ -7421,6 +7421,42 @@ var init_database = __esm({
 });
 
 // src/db/vectors.ts
+function hashText(text) {
+  return import_node_crypto.default.createHash("sha256").update(text).digest("hex").substring(0, 16);
+}
+function storeEmbedding(sourceType, sourceId, text, embedding) {
+  if (!isVectorsAvailable()) return false;
+  const db = getDb();
+  const id = generateId("emb");
+  const textHash = hashText(text);
+  const now = Date.now();
+  try {
+    const existing = db.prepare(
+      "SELECT id, text_hash FROM embeddings WHERE source_type = ? AND source_id = ?"
+    ).get(sourceType, sourceId);
+    if (existing) {
+      if (existing.text_hash === textHash) {
+        return true;
+      }
+      db.prepare("DELETE FROM embeddings WHERE id = ?").run(existing.id);
+      db.prepare("DELETE FROM vec_embeddings WHERE id = ?").run(existing.id);
+    }
+    db.prepare(`
+      INSERT INTO embeddings (id, source_type, source_id, text_hash, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, sourceType, sourceId, textHash, now);
+    const embeddingBuffer = new Float32Array(embedding).buffer;
+    db.prepare("INSERT INTO vec_embeddings (id, embedding) VALUES (?, ?)").run(
+      id,
+      Buffer.from(embeddingBuffer)
+    );
+    log3.debug("Stored embedding", { id, sourceType, sourceId });
+    return true;
+  } catch (err) {
+    log3.error("Failed to store embedding", { error: err });
+    return false;
+  }
+}
 function searchByVector(queryEmbedding, limit = 20) {
   if (!isVectorsAvailable()) return [];
   const db = getDb();
@@ -7470,12 +7506,13 @@ function countEmbeddings() {
     return 0;
   }
 }
-var log3;
+var import_node_crypto, log3;
 var init_vectors = __esm({
   "src/db/vectors.ts"() {
     "use strict";
     init_database();
     init_logger();
+    import_node_crypto = __toESM(require("node:crypto"), 1);
     log3 = createLogger("db:vectors");
   }
 });
@@ -7893,6 +7930,12 @@ var init_anthropic = __esm({
 });
 
 // src/embeddings/queue.ts
+function cancelDebouncedProcessing() {
+  if (debounceTimer !== null) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+}
 function enqueueEmbedding(sourceType, sourceId, textContent) {
   const db = getDb();
   const now = Date.now();
@@ -7902,9 +7945,90 @@ function enqueueEmbedding(sourceType, sourceId, textContent) {
       VALUES (?, ?, ?, 'pending', ?)
     `).run(sourceType, sourceId, textContent, now);
     log7.debug("Enqueued embedding", { sourceType, sourceId });
+    cancelDebouncedProcessing();
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      processQueue().catch((err) => {
+        log7.error("Debounced queue processing failed", { error: err });
+      });
+    }, 3e4);
+    debounceTimer.unref();
   } catch (err) {
     log7.error("Failed to enqueue embedding", { error: err, sourceType, sourceId });
   }
+}
+async function processQueue(batchSize) {
+  const config3 = getConfig();
+  const effectiveBatchSize = batchSize ?? config3.embeddings.batchSize;
+  if (!anthropicEmbeddings.available) {
+    log7.debug("Embedding provider not available, skipping queue processing");
+    return 0;
+  }
+  const db = getDb();
+  const claimToken = `processing_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  db.prepare(`
+    UPDATE embedding_queue SET status = ?, error_message = NULL
+    WHERE id IN (
+      SELECT id FROM embedding_queue
+      WHERE status = 'pending'
+      ORDER BY created_at ASC
+      LIMIT ?
+    )
+  `).run(claimToken, effectiveBatchSize);
+  const pendingItems = db.prepare(`
+    SELECT id, source_type, source_id, text_content, status, error_message, created_at, processed_at
+    FROM embedding_queue
+    WHERE status = ?
+    ORDER BY created_at ASC
+  `).all(claimToken);
+  if (pendingItems.length === 0) {
+    log7.debug("No pending items in embedding queue");
+    return 0;
+  }
+  log7.info("Processing embedding queue", { count: pendingItems.length });
+  const texts = pendingItems.map((item) => item.text_content);
+  let embeddings;
+  try {
+    embeddings = await anthropicEmbeddings.embed(texts);
+  } catch (err) {
+    log7.error("Batch embedding generation failed", { error: err });
+    const now2 = Date.now();
+    const errorMsg = err instanceof Error ? err.message : "Unknown error";
+    for (const item of pendingItems) {
+      db.prepare(`
+        UPDATE embedding_queue SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?
+      `).run(errorMsg, now2, item.id);
+    }
+    return 0;
+  }
+  let processed = 0;
+  const now = Date.now();
+  for (let i = 0; i < pendingItems.length; i++) {
+    const item = pendingItems[i];
+    const embedding = embeddings[i];
+    try {
+      const sourceType = item.source_type;
+      const stored = storeEmbedding(sourceType, item.source_id, item.text_content, embedding);
+      if (stored) {
+        db.prepare(`
+          UPDATE embedding_queue SET status = 'done', processed_at = ? WHERE id = ?
+        `).run(now, item.id);
+        processed++;
+      } else {
+        db.prepare(`
+          UPDATE embedding_queue SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?
+        `).run("Failed to store embedding (vectors may be unavailable)", now, item.id);
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      log7.error("Failed to store embedding for queue item", { error: err, itemId: item.id });
+      db.prepare(`
+        UPDATE embedding_queue SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?
+      `).run(errorMsg, now, item.id);
+    }
+  }
+  log7.info("Queue processing complete", { processed, total: pendingItems.length });
+  return processed;
 }
 function getPendingCount() {
   const db = getDb();
@@ -7917,7 +8041,7 @@ function getPendingCount() {
     return 0;
   }
 }
-var log7;
+var log7, debounceTimer;
 var init_queue = __esm({
   "src/embeddings/queue.ts"() {
     "use strict";
@@ -7927,6 +8051,7 @@ var init_queue = __esm({
     init_config();
     init_anthropic();
     log7 = createLogger("embeddings:queue");
+    debounceTimer = null;
   }
 });
 
@@ -17035,7 +17160,7 @@ function runRecovery() {
 // src/mcp/stdio-server.ts
 init_config();
 init_logger();
-var version2 = "1.0.2";
+var version2 = "1.0.3";
 var log26 = createLogger("mcp:stdio");
 getDb();
 runRecovery();

@@ -4,7 +4,7 @@ import { getSessionByClaudeId, endSession } from '../../db/sessions.js';
 import { getSessionConversations, completeConversation, stashConversation } from '../../db/conversations.js';
 import { getObservationsBySession } from '../../db/observations.js';
 import { summarizeConversation } from '../../conversations/summarizer.js';
-import { processQueue } from '../../embeddings/queue.js';
+import { processQueue, cancelDebouncedProcessing } from '../../embeddings/queue.js';
 import { summarizeObservations } from '../../utils/summarizer.js';
 import { getConfig } from '../../shared/config.js';
 import { createLogger } from '../../shared/logger.js';
@@ -101,6 +101,9 @@ export async function handleSessionEnd(
     keyActions.slice(0, 20),
     [...filesModified],
   );
+
+  // Cancel any debounced timer before flushing, to avoid double-processing
+  cancelDebouncedProcessing();
 
   // Process embedding queue (batch flush)
   try {

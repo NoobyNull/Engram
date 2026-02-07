@@ -7,9 +7,24 @@ import type { EmbeddingQueueItem } from '../shared/types.js';
 
 const log = createLogger('embeddings:queue');
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Cancels any pending debounced processQueue call.
+ * Call this before manually invoking processQueue (e.g. at session end)
+ * to avoid double-processing.
+ */
+export function cancelDebouncedProcessing(): void {
+  if (debounceTimer !== null) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+}
+
 /**
  * Enqueues a text for embedding generation.
  * The item is inserted into the embedding_queue table with status 'pending'.
+ * After inserting, schedules a debounced processQueue call (30s after last enqueue).
  */
 export function enqueueEmbedding(sourceType: string, sourceId: string, textContent: string): void {
   const db = getDb();
@@ -22,6 +37,16 @@ export function enqueueEmbedding(sourceType: string, sourceId: string, textConte
     `).run(sourceType, sourceId, textContent, now);
 
     log.debug('Enqueued embedding', { sourceType, sourceId });
+
+    // Debounce: process queue 30s after the last enqueue
+    cancelDebouncedProcessing();
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      processQueue().catch((err) => {
+        log.error('Debounced queue processing failed', { error: err });
+      });
+    }, 30_000);
+    debounceTimer.unref();
   } catch (err) {
     log.error('Failed to enqueue embedding', { error: err, sourceType, sourceId });
   }
