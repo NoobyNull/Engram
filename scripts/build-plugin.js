@@ -20,9 +20,27 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'plugin');
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8'));
 
-// ── Clean output ─────────────────────────────────────────────────
+// ── Clean output (preserve prebuilt-binaries) ────────────────────
+const BINARIES_DIR = path.join(OUT, 'prebuilt-binaries');
+let savedBinaries = null;
+
+// Save prebuilt binaries if they exist
+if (fs.existsSync(BINARIES_DIR)) {
+  const tempDir = path.join(ROOT, '.temp-binaries');
+  fs.rmSync(tempDir, { recursive: true, force: true });
+  fs.cpSync(BINARIES_DIR, tempDir, { recursive: true });
+  savedBinaries = tempDir;
+}
+
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, 'scripts'), { recursive: true });
+
+// Restore prebuilt binaries
+if (savedBinaries) {
+  fs.cpSync(savedBinaries, BINARIES_DIR, { recursive: true });
+  fs.rmSync(savedBinaries, { recursive: true, force: true });
+  console.log('▸ Preserved prebuilt binaries');
+}
 
 // ── Shared esbuild config ────────────────────────────────────────
 const EXTERNAL = [
