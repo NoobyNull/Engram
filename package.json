@@ -14,7 +14,7 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist plugin",
     "build:plugin": "node scripts/build-plugin.js",
-    "prebuild": "node scripts/prebuild-binaries.cjs",
+    "build:binaries": "node scripts/prebuild-binaries.cjs",
     "version:sync": "node scripts/sync-version.js",
     "postversion": "node scripts/sync-version.js",
     "release": "npm run build && node scripts/version-and-release.js",
